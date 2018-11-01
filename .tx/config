@@ -1,0 +1,7 @@
+[main]
+host = https://www.transifex.com
+
+[grailum.qt-translation-017x]
+file_filter = src/qt/locale/grailum_<lang>.ts
+source_file = src/qt/locale/grailum_en.ts
+source_lang = en

@@ -1,0 +1,33 @@
+# /etc/conf.d/grailumd: config file for /etc/init.d/grailumd
+
+# Config file location
+#GRAILUMD_CONFIGFILE="/etc/grailum/grailum.conf"
+
+# What directory to write pidfile to?  (created and owned by $GRAILUMD_USER)
+#GRAILUMD_PIDDIR="/var/run/grailumd"
+
+# What filename to give the pidfile
+#GRAILUMD_PIDFILE="${GRAILUMD_PIDDIR}/grailumd.pid"
+
+# Where to write grailumd data (be mindful that the blockchain is large)
+#GRAILUMD_DATADIR="/var/lib/grailumd"
+
+# User and group to own grailumd process
+#GRAILUMD_USER="grailum"
+#GRAILUMD_GROUP="grailum"
+
+# Path to grailumd executable
+#GRAILUMD_BIN="/usr/bin/grailumd"
+
+# Nice value to run grailumd under
+#GRAILUMD_NICE=0
+
+# Additional options (avoid -conf and -datadir, use flags above)
+#GRAILUMD_OPTS=""
+
+# The timeout in seconds OpenRC will wait for grailumd to terminate
+# after a SIGTERM has been raised.
+# Note that this will be mapped as argument to start-stop-daemon's
+# '--retry' option, which means you can specify a retry schedule
+# here. For more information see man 8 start-stop-daemon.
+GRAILUMD_SIGTERM_TIMEOUT=60

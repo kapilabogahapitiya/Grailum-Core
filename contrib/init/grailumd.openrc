@@ -1,0 +1,92 @@
+#!/sbin/openrc-run
+
+# backward compatibility for existing gentoo layout 
+#
+if [ -d "/var/lib/grailum/.grailum" ]; then
+	GRAILUMD_DEFAULT_DATADIR="/var/lib/grailum/.grailum"
+else
+	GRAILUMD_DEFAULT_DATADIR="/var/lib/grailumd"
+fi
+
+GRAILUMD_CONFIGFILE=${GRAILUMD_CONFIGFILE:-/etc/grailum/grailum.conf}
+GRAILUMD_PIDDIR=${GRAILUMD_PIDDIR:-/var/run/grailumd}
+GRAILUMD_PIDFILE=${GRAILUMD_PIDFILE:-${GRAILUMD_PIDDIR}/grailumd.pid}
+GRAILUMD_DATADIR=${GRAILUMD_DATADIR:-${GRAILUMD_DEFAULT_DATADIR}}
+GRAILUMD_USER=${GRAILUMD_USER:-${GRAILUM_USER:-grailum}}
+GRAILUMD_GROUP=${GRAILUMD_GROUP:-grailum}
+GRAILUMD_BIN=${GRAILUMD_BIN:-/usr/bin/grailumd}
+GRAILUMD_NICE=${GRAILUMD_NICE:-${NICELEVEL:-0}}
+GRAILUMD_OPTS="${GRAILUMD_OPTS:-${GRAILUM_OPTS}}"
+
+name="Grailum Core Daemon"
+description="Grailum cryptocurrency P2P network daemon"
+
+command="/usr/bin/grailumd"
+command_args="-pid=\"${GRAILUMD_PIDFILE}\" \
+		-conf=\"${GRAILUMD_CONFIGFILE}\" \
+		-datadir=\"${GRAILUMD_DATADIR}\" \
+		-daemon \
+		${GRAILUMD_OPTS}"
+
+required_files="${GRAILUMD_CONFIGFILE}"
+start_stop_daemon_args="-u ${GRAILUMD_USER} \
+			-N ${GRAILUMD_NICE} -w 2000"
+pidfile="${GRAILUMD_PIDFILE}"
+
+# The retry schedule to use when stopping the daemon. Could be either
+# a timeout in seconds or multiple signal/timeout pairs (like
+# "SIGKILL/180 SIGTERM/300")
+retry="${GRAILUMD_SIGTERM_TIMEOUT}"
+
+depend() {
+	need localmount net
+}
+
+# verify
+# 1) that the datadir exists and is writable (or create it)
+# 2) that a directory for the pid exists and is writable
+# 3) ownership and permissions on the config file
+start_pre() {
+	checkpath \
+	-d \
+	--mode 0750 \
+	--owner "${GRAILUMD_USER}:${GRAILUMD_GROUP}" \
+	"${GRAILUMD_DATADIR}"
+
+	checkpath \
+	-d \
+	--mode 0755 \
+	--owner "${GRAILUMD_USER}:${GRAILUMD_GROUP}" \
+	"${GRAILUMD_PIDDIR}"
+
+	checkpath -f \
+	-o ${GRAILUMD_USER}:${GRAILUMD_GROUP} \
+	-m 0660 \
+	${GRAILUMD_CONFIGFILE}
+
+	checkconfig || return 1
+}
+
+checkconfig()
+{
+	if ! grep -qs '^rpcpassword=' "${GRAILUMD_CONFIGFILE}" ; then
+		eerror ""
+		eerror "ERROR: You must set a secure rpcpassword to run grailumd."
+		eerror "The setting must appear in ${GRAILUMD_CONFIGFILE}"
+		eerror ""
+		eerror "This password is security critical to securing wallets "
+		eerror "and must not be the same as the rpcuser setting."
+		eerror "You can generate a suitable random password using the following "
+		eerror "command from the shell:"
+		eerror ""
+		eerror "bash -c 'tr -dc a-zA-Z0-9 < /dev/urandom | head -c32 && echo'"
+		eerror ""
+		eerror "It is recommended that you also set alertnotify so you are "
+		eerror "notified of problems:"
+		eerror ""
+		eerror "ie: alertnotify=echo %%s | mail -s \"Grailum Alert\"" \
+			"admin@foo.com"
+		eerror ""
+		return 1
+	fi
+}
